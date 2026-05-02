@@ -1,0 +1,112 @@
+// HoMMUNC NAMETAG GENERATOR
+// Reads delegate info from a Google Sheet and creates a
+// formatted nametag slide for each delegate in Google Slides.
+
+function createNametags() {
+
+  var SHEET_NAME    = "Delegates";  // Name of the tab in your Google Sheet
+  var COL_NAME      = 0;            // Delegate full name
+  var COL_COUNTRY   = 1;            // Country
+  var COL_COMMITTEE = 2;            // Committee name
+  var COL_POSITION  = 3;            // delegation
+
+  var SLIDE_WIDTH  = 720;           // 10 inches wide
+  var SLIDE_HEIGHT = 540;           // 7.5 inches tall
+
+  // connect
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var data  = sheet.getDataRange().getValues(); // Pull all rows and columns
+
+  // new press
+  var presentation = SlidesApp.create("HoMMUNC Nametags");
+
+  // Remove the default blank slide that Google adds automatically
+  var existingSlides = presentation.getSlides();
+  if (existingSlides.length > 0) {
+    existingSlides[0].remove();
+  }
+
+  // loop
+  for (var i = 1; i < data.length; i++) {
+
+    var row = data[i];
+
+    var name      = row[COL_NAME]      ? row[COL_NAME].toString()      : "";
+    var country   = row[COL_COUNTRY]   ? row[COL_COUNTRY].toString()   : "";
+    var committee = row[COL_COMMITTEE] ? row[COL_COMMITTEE].toString() : "";
+    var position  = row[COL_POSITION]  ? row[COL_POSITION].toString()  : "";
+
+    if (name.trim() === "") continue;
+
+    // blank slide per del
+    var slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
+    slide.getBackground().setSolidFill("#FFFFFF"); // White background
+
+    // Thin colored bar running across the very top of the slide
+    var topBar = slide.insertShape(SlidesApp.ShapeType.RECTANGLE, 0, 0, SLIDE_WIDTH, 12);
+    topBar.getFill().setSolidFill("#1a3a5c");
+    topBar.getBorder().setTransparent();
+
+//committee
+        
+    // Small text near the top showing which committee this delegate is in
+    var committeeBox = slide.insertTextBox(committee.toUpperCase(), 40, 30, SLIDE_WIDTH - 80, 40);
+    styleText(committeeBox, 13, "#1a3a5c", false, "CENTER");
+
+// country
+        // Large bold text — the most prominent element on the nametag
+    var countryBox = slide.insertTextBox(country, 40, 80, SLIDE_WIDTH - 80, 120);
+    styleText(countryBox, 52, "#1a3a5c", true, "CENTER");
+
+    // Horizontal line separating the country from the delegate name
+    var line = slide.insertLine(SlidesApp.LineCategory.STRAIGHT, 80, 210, SLIDE_WIDTH - 80, 210);
+    line.getLineFill().setSolidFill("#1a3a5c");
+    line.setWeight(1.5);
+
+// name
+    var nameBox = slide.insertTextBox(name, 40, 225, SLIDE_WIDTH - 80, 80);
+    styleText(nameBox, 32, "#333333", false, "CENTER");
+
+        // implement position (or school ig) 
+    if (position !== "") {
+      var posBox = slide.insertTextBox(position, 40, 315, SLIDE_WIDTH - 80, 35);
+      styleText(posBox, 14, "#666666", false, "CENTER");
+    }
+
+    // Matching colored bar running across the bottom of the slide
+    var bottomBar = slide.insertShape(SlidesApp.ShapeType.RECTANGLE, 0, SLIDE_HEIGHT - 12, SLIDE_WIDTH, 12);
+    bottomBar.getFill().setSolidFill("#1a3a5c");
+    bottomBar.getBorder().setTransparent();
+
+  } 
+        // loop ends
+
+  var url = presentation.getUrl();
+  Logger.log("Nametags created: " + url);
+  SpreadsheetApp.getUi().alert("Nametags created!\n\n" + url);
+
+}
+
+
+
+function styleText(textBox, fontSize, hexColor, bold, alignment) {
+
+  textBox.getBorder().setTransparent();
+  textBox.getFill().setTransparentFill();
+
+  var style = textBox.getText().getTextStyle();
+  style.setFontSize(fontSize);
+  style.setForegroundColor(hexColor);
+  style.setBold(bold);
+  style.setFontFamily("Arial");
+
+  // paragraph allign
+  var paraStyle = textBox.getText().getParagraphStyle();
+  if (alignment === "CENTER") {
+    paraStyle.setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
+  } else {
+    paraStyle.setParagraphAlignment(SlidesApp.ParagraphAlignment.START);
+  }
+
+}
